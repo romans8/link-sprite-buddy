@@ -54,9 +54,9 @@ FRAMES_DIR = os.path.join(SCRIPT_DIR, "sprites")
 SCALE = 4       # pixel art scale factor
 MAX_H = 260     # max display height for any frame
 WW = 550        # widget width
-WH = 270        # widget height
+WH = 350        # widget height — room for thought bubble above head
 SOX = 10        # sprite X margin
-SOY = 10        # sprite Y margin
+SOY = 80        # sprite Y margin — extra top space for bubbles
 UDP_PORT = 44444
 
 
@@ -322,7 +322,9 @@ class LinkSprite(QWidget):
         if self.state == "search":
             self._draw_search(p, text_x, draw_y)
         elif self.state == "think":
-            self._draw_think(p, text_x, draw_y)
+            # Thought bubble always above Link's head, text to the side
+            head_x = sprite_x + pix.width() // 2
+            self._draw_think(p, text_x, draw_y, head_x)
         elif self.state == "attack":
             self._draw_attack(p, text_x, draw_y)
 
@@ -337,24 +339,28 @@ class LinkSprite(QWidget):
                     "sqlmap .", "grep -r", "enum4lin", "hydra.."]
             p.drawText(tx, dy + 40, cmds[(f // 10) % len(cmds)])
 
-    def _draw_think(self, p, tx, dy):
+    def _draw_think(self, p, tx, dy, head_x):
         f = self.anim_frame
         phase = (f // 5) % 6
+        # Fixed Y positions so bubble doesn't jump when frame size changes
+        bubble_base = SOY - 10  # above Link's head
         if phase >= 1:
             p.setBrush(QBrush(QColor(255, 255, 255, 200)))
             p.setPen(QPen(QColor(120, 120, 135), 1))
-            p.drawEllipse(tx - 20, dy + 10, 14, 14)
+            p.drawEllipse(head_x - 5, bubble_base, 14, 14)
         if phase >= 2:
-            p.drawEllipse(tx - 5, dy - 5, 18, 16)
+            p.drawEllipse(head_x, bubble_base - 20, 18, 16)
         if phase >= 3:
+            cloud_x = head_x - 75
+            cloud_y = bubble_base - 60
             p.setBrush(QBrush(QColor(255, 255, 255, 230)))
             p.setPen(QPen(QColor(100, 105, 120), 2))
-            p.drawRoundedRect(tx - 10, dy - 30, 155, 48, 12, 12)
+            p.drawRoundedRect(cloud_x, cloud_y, 155, 48, 12, 12)
             p.setPen(QPen(QColor(50, 55, 75)))
             p.setFont(QFont("Monospace", 11, QFont.Bold))
             thoughts = ["0xDEADBEEF", "CVE-2025-??", "RCE found!",
                         "IDOR vuln?", "SSRF chain", "SQLi blind"]
-            p.drawText(tx - 2, dy - 6, thoughts[(f // 10) % len(thoughts)])
+            p.drawText(cloud_x + 8, cloud_y + 28, thoughts[(f // 10) % len(thoughts)])
 
     def _draw_attack(self, p, tx, dy):
         f = self.anim_frame
